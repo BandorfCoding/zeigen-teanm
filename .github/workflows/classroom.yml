@@ -1,0 +1,51 @@
+name: Autograding Tests
+
+'on':
+- push
+- repository_dispatch
+- workflow_dispatch
+
+permissions:
+  checks: write
+  actions: read
+  contents: read
+
+jobs:
+  run-autograding-tests:
+    runs-on: ubuntu-latest
+  
+    if: github.actor != 'github-classroom[bot]'
+   
+    steps:
+    - name: Checkout Assignment Repository
+      uses: actions/checkout@v4
+      with:
+        token: ${{secrets.PERSONAL_ACCESS_TOKEN}}
+        path: starting-repo
+      
+    - name: Checkout Test Repository
+      uses: actions/checkout@v4
+      with:
+        repository: BandorfCoding/test_scripts
+        token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
+        path: test_scripts
+
+    - name: Install dependencies
+      run: sudo -H pip3 install pytest
+      
+    - name: Run tests
+      id: test_aufgabe_1-py
+      uses: classroom-resources/autograding-command-grader@v1
+      with:
+        test-name: test_aufgabe_1.py
+        command: pytest test_scripts/tests/test_aufgabe_1.py
+        max-score: 10
+      env:
+        PYTHONPATH: ${pwd}/starting-repo
+      
+    - name: Autograding Reporter
+      uses: classroom-resources/autograding-grading-reporter@v1
+      env:
+        TEST_AUFGABE_1-PY_RESULTS: "${{steps.test_aufgabe_1-py.outputs.result}}"
+      with:
+        runners: test_aufgabe_1-py
